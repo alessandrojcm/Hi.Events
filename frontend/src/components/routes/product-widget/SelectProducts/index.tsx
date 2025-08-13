@@ -37,6 +37,8 @@ import {IconChevronRight, IconX} from "@tabler/icons-react"
 import {getSessionIdentifier} from "../../../../utilites/sessionIdentifier.ts";
 import {Constants} from "../../../../constants.ts";
 
+const AFFILIATE_EXPIRY_DAYS = 30;
+
 const sendHeightToIframeWidgets = () => {
     const height = document.documentElement.scrollHeight;
     const widgetHeight = document.querySelector('.hi-product-widget-container')?.getBoundingClientRect().height || 0;
@@ -72,6 +74,7 @@ interface SelectProductsProps {
     padding?: string;
     continueButtonText?: string;
     widgetMode?: 'preview' | 'normal' | 'embedded';
+    showPoweredBy?: boolean;
 }
 
 const SelectProducts = (props: SelectProductsProps) => {
@@ -85,13 +88,48 @@ const SelectProducts = (props: SelectProductsProps) => {
     const [orderInProcessOverlayVisible, setOrderInProcessOverlayVisible] = useState(false);
     const [resizeRef, resizeObserverRect] = useResizeObserver();
     const [collapsedProducts, setCollapsedProducts] = useState<{ [key: number]: boolean }>({});
+    const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
 
     useEffect(() => sendHeightToIframeWidgets(), [resizeObserverRect.height]);
+
+    useEffect(() => {
+        const storageKey = 'affiliate_code_' + eventId;
+
+        const now = Date.now();
+        const affiliateCodeFromUrl = new URLSearchParams(window.location.search).get('aff');
+
+        if (affiliateCodeFromUrl) {
+            const data = {code: affiliateCodeFromUrl, timestamp: now};
+            localStorage.setItem(storageKey, JSON.stringify(data));
+            setAffiliateCode(affiliateCodeFromUrl);
+            return;
+        }
+
+        const storedData = localStorage.getItem(storageKey);
+        if (storedData) {
+            try {
+                const parsed = JSON.parse(storedData);
+                const ageInDays = (now - parsed.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays <= AFFILIATE_EXPIRY_DAYS) {
+                    setAffiliateCode(parsed.code);
+                } else {
+                    localStorage.removeItem(storageKey);
+                }
+            } catch {
+                localStorage.removeItem(storageKey);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        form.setFieldValue('affiliate_code', affiliateCode || null);
+    }, [affiliateCode]);
 
     const form = useForm<ProductFormPayload>({
         initialValues: {
             products: undefined,
             promo_code: props.promoCodeValid ? props.promoCode || null : null,
+            affiliate_code: affiliateCode || null,
             session_identifier: undefined,
         },
     });
@@ -103,7 +141,10 @@ const SelectProducts = (props: SelectProductsProps) => {
             .then(() => {
                 const url = '/checkout/' + eventId + '/' + data.data.short_id + '/details';
                 if (props.widgetMode === 'embedded') {
-                    window.open(url, '_blank');
+                    window.open(
+                        url + '?session_identifier=' + data.data.session_identifier + '&utm_source=embedded_widget',
+                        '_blank'
+                    );
                     setOrderInProcessOverlayVisible(true);
                     return;
                 }
@@ -253,16 +294,16 @@ const SelectProducts = (props: SelectProductsProps) => {
     let productIndex = 0;
 
     return (
-        (<div className={'hi-product-widget-container'}
-              ref={resizeRef}
-              style={{
-                  '--widget-background-color': props.colors?.background,
-                  '--widget-primary-color': props.colors?.primary,
-                  '--widget-primary-text-color': props.colors?.primaryText,
-                  '--widget-secondary-color': props.colors?.secondary,
-                  '--widget-secondary-text-color': props.colors?.secondaryText,
-                  '--widget-padding': props?.padding,
-              } as React.CSSProperties}>
+        <div className={'hi-product-widget-container'}
+             ref={resizeRef}
+             style={{
+                 '--widget-background-color': props.colors?.background,
+                 '--widget-primary-color': props.colors?.primary,
+                 '--widget-primary-text-color': props.colors?.primaryText,
+                 '--widget-secondary-color': props.colors?.secondary,
+                 '--widget-secondary-text-color': props.colors?.secondaryText,
+                 '--widget-padding': props?.padding,
+             } as React.CSSProperties}>
             {!productAreAvailable && (
                 <div className={classNames(['hi-no-products'])}>
                     <p className={classNames(['hi-no-products-message'])}>
@@ -271,27 +312,84 @@ const SelectProducts = (props: SelectProductsProps) => {
                 </div>
             )}
             {orderInProcessOverlayVisible && (
-                <Modal withCloseButton={false} opened={true} onClose={() => setOrderInProcessOverlayVisible(false)}>
-                    <div style={{textAlign: 'center', padding: '20px'}}>
-                        <img style={{width: '110px'}} src={'/stopwatch-product-icon.svg'} alt={''}/>
-                        <div>
-                            <h4 style={{margin: '0'}}>
+                <Modal
+                    withCloseButton={false}
+                    opened={true}
+                    onClose={() => setOrderInProcessOverlayVisible(false)}
+                    styles={{
+                        body: {
+                            padding: '30px 24px'
+                        },
+                        content: {
+                            borderRadius: '8px',
+                            backgroundColor: props.colors?.background || 'white'
+                        }
+                    }}
+                >
+                    <div style={{
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '16px',
+                        color: props.colors?.primaryText || 'inherit'
+                    }}>
+                        <div style={{width: '100%'}}>
+                            <h3 style={{
+                                margin: '0 0 12px 0',
+                                fontSize: '20px',
+                                fontWeight: '600',
+                                color: props.colors?.primaryText || 'inherit'
+                            }}>
                                 {t`Please continue in the new tab`}
-                            </h4>
-                            <Trans>
-                                If a new tab did not open, please {' '}
-                                <a href={'/checkout/' + eventId + '/' + productMutation.data?.data.short_id + '/details'}
-                                   target={'_blank'} rel={'noopener noreferrer'}>
-                                    <b>{t`click here`}</b>.
-                                </a>
-                            </Trans>
+                            </h3>
+
+                            <p style={{
+                                margin: '0 0 20px 0',
+                                fontSize: '15px',
+                                lineHeight: '1.5',
+                                color: props.colors?.primaryText || 'inherit'
+                            }}>
+                                {t`If a new tab did not open automatically, please click the button below to continue to checkout.`}
+                            </p>
+
                             <Button
-                                style={{marginTop: '20px'}}
-                                onClick={() => setOrderInProcessOverlayVisible(false)}
-                                variant={'transparent'}
-                                size={'xs'}
+                                component="a"
+                                href={'/checkout/' + eventId + '/' + productMutation.data?.data.short_id + '/details' + '?session_identifier=' + productMutation.data?.data.session_identifier}
+                                target={'_blank'}
+                                rel={'noopener noreferrer'}
+                                fullWidth
+                                size="md"
+                                styles={{
+                                    root: {
+                                        backgroundColor: props.colors?.secondary || '#228be6',
+                                        color: props.colors?.secondaryText || 'white',
+                                        fontWeight: 600,
+                                        marginBottom: '12px',
+                                        '&:hover': {
+                                            backgroundColor: props.colors?.secondary || '#1c7ed6',
+                                        }
+                                    }
+                                }}
                             >
-                                {t`Dismiss`}
+                                {t`Continue to Checkout`}
+                            </Button>
+
+                            <Button
+                                onClick={() => setOrderInProcessOverlayVisible(false)}
+                                variant={'subtle'}
+                                size={'sm'}
+                                styles={{
+                                    root: {
+                                        color: props.colors?.primaryText || '#228be6',
+                                        '&:hover': {
+                                            backgroundColor: 'transparent',
+                                            textDecoration: 'underline'
+                                        }
+                                    }
+                                }}
+                            >
+                                {t`Dismiss this message`}
                             </Button>
                         </div>
                     </div>
@@ -300,15 +398,24 @@ const SelectProducts = (props: SelectProductsProps) => {
             {(event && productAreAvailable) && (
                 <form target={'__blank'} onSubmit={form.onSubmit(handleProductSelection as any)}>
                     <Input type={'hidden'} {...form.getInputProps('promo_code')} />
+                    <Input type={'hidden'} {...form.getInputProps('affiliate_code')} />
                     <div className={'hi-product-category-rows'}>
                         {productCategories && productCategories.map((category) => {
                             return (
                                 <div className={'hi-product-category-row'} key={category.id}>
-                                    <h2 className={'hi-product-category-title'}>
+                                    <h2 className={'hi-product-category-title'} style={category.description ? {
+                                        marginBottom: '0px'
+                                    } : {}}>
                                         {category.name}
                                     </h2>
+                                    {category.description && (
+                                        <div className={'hi-product-category-description'}>
+                                            <Spoiler maxHeight={500} showLabel={t`Show more`} hideLabel={t`Hide`}>
+                                                <div dangerouslySetInnerHTML={{__html: category.description}}/>
+                                            </Spoiler>
+                                        </div>
+                                    )}
                                     <div className={'hi-product-rows'}>
-
                                         {category.products?.length === 0 && (
                                             <div className={'hi-no-products'}>
                                                 <p className={'hi-no-products-message'}>
@@ -451,24 +558,35 @@ const SelectProducts = (props: SelectProductsProps) => {
                         </ActionIcon>
                     </div>
                 )}
+
+                {(showPromoCodeInput && !form.values.promo_code) && (
+                    <Group className={'hi-promo-code-input-wrapper'} wrap={'nowrap'} gap={'20px'}>
+                        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                        {/*@ts-ignore*/}
+                        <TextInput autoFocus classNames={{input: 'hi-promo-code-input'}} onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                handleApplyPromoCode();
+                            }
+                        }} mb={0} ref={promoRef}/>
+                        <Button disabled={promoCodeEventRefetchMutation.isPending}
+                                className={'hi-apply-promo-code-button'} variant={'outline'}
+                                onClick={handleApplyPromoCode}>
+                            {t`Apply Promo Code`}
+                        </Button>
+                        <ActionIcon
+                            className={'hi-close-promo-code-input-button'}
+                            variant="transparent"
+                            aria-label={t`close`}
+                            title={t`Close`}
+                            onClick={() => setShowPromoCodeInput(false)}
+                        >
+                            <IconX stroke={1.5} size={20}/>
+                        </ActionIcon>
+                    </Group>
+                )}
             </div>
-            {(showPromoCodeInput && !form.values.promo_code) && (
-                <Group className={'hi-promo-code-input-wrapper'} wrap={'nowrap'} gap={'20px'}>
-                    {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-                    {/*@ts-ignore*/}
-                    <TextInput autoFocus classNames={{input: 'hi-promo-code-input'}} onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                            event.preventDefault();
-                            handleApplyPromoCode();
-                        }
-                    }} mb={0} ref={promoRef}/>
-                    <Button disabled={promoCodeEventRefetchMutation.isPending}
-                            className={'hi-apply-promo-code-button'} variant={'outline'}
-                            onClick={handleApplyPromoCode}>
-                        {t`Apply Promo Code`}
-                    </Button>
-                </Group>
-            )}
+
             {
                 /**
                  * (c) Hi.Events Ltd 2025
@@ -484,10 +602,12 @@ const SelectProducts = (props: SelectProductsProps) => {
                  * If you wish to remove this notice, a commercial license is available at: https://hi.events/licensing
                  */
             }
-            <PoweredByFooter style={{
-                'color': props.colors?.primaryText || '#000',
-            }}/>
-        </div>)
+            {(props.showPoweredBy ?? true) && (
+                <PoweredByFooter style={{
+                    'color': props.colors?.primaryText || '#000',
+                }}/>
+            )}
+        </div>
     );
 }
 

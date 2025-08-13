@@ -62,11 +62,14 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function all(array $columns = self::DEFAULT_COLUMNS): Collection
     {
-        return $this->handleResults($this->model->all($columns));
+        $models = $this->model->all($columns);
+        $this->resetModel();
+
+        return $this->handleResults($models);
     }
 
     public function paginate(
-        int   $limit = null,
+        ?int   $limit = null,
         array $columns = self::DEFAULT_COLUMNS
     ): LengthAwarePaginator
     {
@@ -78,9 +81,9 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function paginateWhere(
         array $where,
-        int   $limit = null,
+        ?int   $limit = null,
         array $columns = self::DEFAULT_COLUMNS,
-        int   $page = null,
+        ?int   $page = null,
     ): LengthAwarePaginator
     {
         $this->applyConditions($where);
@@ -96,7 +99,7 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function simplePaginateWhere(
         array $where,
-        int   $limit = null,
+        ?int  $limit = null,
         array $columns = self::DEFAULT_COLUMNS,
     ): Paginator
     {
@@ -109,7 +112,7 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function paginateEloquentRelation(
         Relation $relation,
-        int      $limit = null,
+        ?int      $limit = null,
         array    $columns = self::DEFAULT_COLUMNS
     ): LengthAwarePaginator
     {
@@ -121,13 +124,16 @@ abstract class BaseRepository implements RepositoryInterface
      */
     public function findById(int $id, array $columns = self::DEFAULT_COLUMNS): DomainObjectInterface
     {
-        return $this->handleSingleResult($this->model->findOrFail($id, $columns));
+        $model = $this->model->findOrFail($id, $columns);
+        $this->resetModel();
+
+        return $this->handleSingleResult($model);
     }
 
     public function findFirstByField(
-        string $field,
-        string $value = null,
-        array  $columns = ['*']
+        string  $field,
+        ?string $value = null,
+        array   $columns = ['*']
     ): ?DomainObjectInterface
     {
         $model = $this->model->where($field, '=', $value)->first($columns);
@@ -138,7 +144,10 @@ abstract class BaseRepository implements RepositoryInterface
 
     public function findFirst(int $id, array $columns = self::DEFAULT_COLUMNS): ?DomainObjectInterface
     {
-        return $this->handleSingleResult($this->model->findOrFail($id, $columns));
+        $model = $this->model->findOrFail($id, $columns);
+        $this->resetModel();
+
+        return $this->handleSingleResult($model);
     }
 
     public function findWhere(
@@ -332,12 +341,12 @@ abstract class BaseRepository implements RepositoryInterface
         }
     }
 
-    protected function initModel(string $model = null): Model
+    protected function initModel(?string $model = null): Model
     {
         return $this->app->make($model ?: $this->getModel());
     }
 
-    protected function handleResults($results, string $domainObjectOverride = null)
+    protected function handleResults($results, ?string $domainObjectOverride = null)
     {
         $domainObjects = [];
         foreach ($results as $result) {
@@ -359,7 +368,7 @@ abstract class BaseRepository implements RepositoryInterface
 
     protected function handleSingleResult(
         ?BaseModel $model,
-        string     $domainObjectOverride = null
+        ?string     $domainObjectOverride = null
     ): ?DomainObjectInterface
     {
         if (!$model) {
@@ -441,7 +450,7 @@ abstract class BaseRepository implements RepositoryInterface
      */
     private function hydrateDomainObjectFromModel(
         Model  $model,
-        string $domainObjectOverride = null,
+        ?string $domainObjectOverride = null,
         ?array $relationships = null,
     ): DomainObjectInterface
     {

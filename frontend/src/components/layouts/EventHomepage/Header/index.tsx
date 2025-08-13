@@ -4,7 +4,7 @@ import {Event} from '../../../../types.ts';
 
 export const Header: FC<{
     event: Event
-}> = ({event}) => {
+}> = ({ event }) => {
 
     const coverImage = event?.images?.find((image) => image.type === 'EVENT_COVER');
 
@@ -16,7 +16,7 @@ export const Header: FC<{
         <>
             <header className={classes.header}>
                 <img
-                    loading={'lazy'}
+                    style={{maxWidth: '1000px'}}
                     alt={event?.title}
                     src={coverImage.url}
                 />

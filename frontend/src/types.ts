@@ -3,11 +3,25 @@
  */
 import {SupportedLocales} from "./locales.ts";
 
-export type ConfigKeys = 'VITE_FRONTEND_URL'
-    | 'VITE_API_URL_CLIENT'
-    | 'VITE_STRIPE_PUBLISHABLE_KEY'
+export type ConfigKeys = 
     | 'VITE_API_URL_SERVER'
-    | string;
+    | 'VITE_API_URL_CLIENT'
+    | 'VITE_FRONTEND_URL'
+    | 'VITE_APP_PRIMARY_COLOR'
+    | 'VITE_APP_SECONDARY_COLOR'
+    | 'VITE_APP_NAME'
+    | 'VITE_APP_FAVICON'
+    | 'VITE_APP_LOGO_DARK'
+    | 'VITE_APP_LOGO_LIGHT'
+    | 'VITE_CHATWOOT_BASE_URL'
+    | 'VITE_CHATWOOT_WEBSITE_TOKEN'
+    | 'VITE_HIDE_ABOUT_LINK'
+    | 'VITE_TOS_URL'
+    | 'VITE_PRIVACY_URL'
+    | 'VITE_PLATFORM_SUPPORT_EMAIL'
+    | 'VITE_STRIPE_PUBLISHABLE_KEY'
+    | 'VITE_I_HAVE_PURCHASED_A_LICENCE'
+    | 'VITE_DEFAULT_IMAGE_URL';
 
 export type IdParam = string | undefined | number;
 
@@ -28,6 +42,16 @@ export interface ResetPasswordRequest {
     password_confirmation: string;
 }
 
+export interface ColorTheme {
+    name: string;
+    homepage_background_color: string;
+    homepage_content_background_color: string;
+    homepage_primary_color: string;
+    homepage_primary_text_color: string;
+    homepage_secondary_color: string;
+    homepage_secondary_text_color: string;
+}
+
 export interface LoginResponse {
     token?: string;
     token_type: string;
@@ -41,11 +65,13 @@ export interface User {
     account_id?: IdParam;
     first_name: string;
     last_name: string;
+    full_name: string;
     email: string;
     timezone?: string;
     password?: string;
     is_email_verified?: boolean;
     has_pending_email_change?: boolean;
+    enforce_email_confirmation_during_registration?: boolean;
     pending_email?: string;
     last_login_at?: string;
     status?: 'ACTIVE' | 'INACTIVE' | 'INVITED';
@@ -62,6 +88,7 @@ export interface Account {
     currency_code?: string;
     password?: string;
     stripe_connect_setup_complete?: boolean;
+    stripe_account_id?: string;
     is_account_email_confirmed?: boolean;
     is_saas_mode_enabled?: boolean;
     configuration?: AccountConfiguration;
@@ -96,8 +123,10 @@ export interface Image {
     url: string;
     size: number;
     mime_type: string;
-    type: string;
+    type: ImageType;
 }
+
+export type ImageType = 'EVENT_COVER' | 'EDITOR_IMAGE' | 'ORGANIZER_LOGO' | 'ORGANIZER_COVER' | 'ORGANIZER_IMAGE';
 
 export type PaymentProvider = 'STRIPE' | 'OFFLINE';
 
@@ -160,6 +189,7 @@ export interface VenueAddress {
 export interface EventBase {
     title: string;
     description?: string;
+    category?: string;
     start_date: string;
     end_date?: string;
 }
@@ -179,6 +209,12 @@ export enum EventStatus {
     DRAFT = 'DRAFT',
     LIVE = 'LIVE',
     PAUSED = 'PAUSED',
+    ARCHIVED = 'ARCHIVED'
+}
+
+export enum OrganizerStatus {
+    DRAFT = 'DRAFT',
+    LIVE = 'LIVE',
     ARCHIVED = 'ARCHIVED'
 }
 
@@ -251,17 +287,72 @@ export interface EventStats {
     total_refunded: number;
 }
 
+export interface OrganizerStats {
+    total_products_sold: number;
+    total_attendees_registered: number;
+    total_orders: number;
+    total_gross_sales: number;
+    total_tax: number;
+    total_fees: number;
+    total_views: number;
+    total_refunded: number;
+    all_organizers_currencies: string[];
+}
+
 export interface Organizer {
-    id?: number;
+    id?: IdParam;
     name: string;
     email: string;
     description?: string;
     website?: string;
     timezone?: string;
     currency?: string;
+    slug?: string;
     phone?: string;
     images?: Image[];
     events?: Event[];
+    settings?: OrganizerSettings;
+    location_details?: VenueAddress;
+    status?: 'LIVE' | 'DRAFT';
+}
+
+export interface OrganizerSettings {
+    id: IdParam;
+    organizer_id: IdParam;
+    homepage_visibility: 'PUBLIC' | 'PRIVATE' | 'PASSWORD_PROTECTED';
+    homepage_theme_settings: {
+        homepage_background_color: string;
+        homepage_primary_color: string;
+        homepage_primary_text_color: string;
+        homepage_secondary_color: string;
+        homepage_secondary_text_color: string;
+        homepage_content_background_color: string;
+        homepage_background_type?: 'COLOR' | 'MIRROR_COVER_IMAGE';
+    }
+    website_url?: string;
+    location_details?: VenueAddress;
+    social_media_handles?: {
+        facebook?: string;
+        instagram?: string;
+        twitter?: string;
+        linkedin?: string;
+        youtube?: string;
+        tiktok?: string;
+        snapchat?: string;
+        twitch?: string;
+        discord?: string;
+        github?: string;
+        reddit?: string;
+        pinterest?: string;
+        whatsapp?: string;
+        telegram?: string;
+        wechat?: string;
+        weibo?: string;
+    },
+    seo_keywords?: string;
+    seo_description?: string;
+    seo_title?: string;
+    allow_search_engine_indexing?: boolean;
 }
 
 export interface SortDirectionLabel {
@@ -404,7 +495,7 @@ export interface Attendee {
     check_in?: AttendeeCheckIn;
 }
 
-export type PublicCheckIn = Pick<AttendeeCheckIn, 'id' | 'attendee_id' | 'check_in_list_id' | 'product_id' | 'event_id'>;
+export type PublicCheckIn = Pick<AttendeeCheckIn, 'id' | 'order_id' | 'attendee_id' | 'check_in_list_id' | 'product_id' | 'event_id'>;
 
 export interface AttendeeCheckIn {
     id: IdParam;
@@ -413,6 +504,7 @@ export interface AttendeeCheckIn {
     product_id: IdParam;
     event_id: IdParam;
     short_id: IdParam;
+    order_id: IdParam;
     created_at: string;
 }
 
@@ -436,8 +528,9 @@ interface TaxesAndFeesRollup {
 }
 
 export interface Order {
-    id: number;
+    id: IdParam;
     short_id: string;
+    event_id: IdParam;
     first_name: string;
     last_name: string;
     company_name: string;
@@ -470,6 +563,7 @@ export interface Order {
     question_answers?: QuestionAnswer[];
     event?: Event;
     latest_invoice?: Invoice;
+    session_identifier?: string;
 }
 
 export interface Invoice {
@@ -713,8 +807,43 @@ export interface QuestionAnswer {
     belongs_to: string;
     question_type: string;
     attendee_id?: number;
+    attendee_public_id?: IdParam;
     first_name?: string;
     last_name?: string;
+    question_answer_id?: IdParam;
+    question_description?: string;
+    question_required?: boolean;
+    question_options?: string[];
+}
+
+export enum ReportTypes {
+    ProductSales = 'product_sales',
+    DailySales = 'daily_sales_report',
+    PromoCodes = 'promo_codes_report',
+}
+
+export interface Webhook {
+    id: IdParam;
+    event_id: IdParam;
+    url: string;
+    secret: string;
+    status: 'ENABLED' | 'PAUSED';
+    event?: Event;
+    event_types?: string[];
+    last_response_code?: number;
+    last_response_body?: string;
+    last_triggered_at?: string | Date;
+    logs?: WebhookLog[];
+}
+
+export interface WebhookLog {
+    id: IdParam;
+    webhook_id: IdParam;
+    payload?: string;
+    response_code?: number; // 0 = no response
+    response_body?: string;
+    event_type: string;
+    created_at: string;
 }
 
 export enum ReportTypes {

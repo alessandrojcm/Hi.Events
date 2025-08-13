@@ -4,8 +4,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
 import React, {useEffect, useState} from "react";
-import {InputDescription, InputError, InputLabel} from "@mantine/core";
+import {InputDescription, InputError, InputLabel, MantineFontSize} from "@mantine/core";
 import classes from "./Editor.module.scss";
 import classNames from "classnames";
 import {Trans} from "@lingui/macro";
@@ -22,6 +24,7 @@ interface EditorProps {
     error?: string;
     editorType?: 'full' | 'simple';
     maxLength?: number;
+    size?: MantineFontSize;
 }
 
 export const Editor = ({
@@ -34,6 +37,7 @@ export const Editor = ({
                            description = '',
                            editorType = 'full',
                            maxLength,
+                           size = 'md',
                        }: EditorProps) => {
     const [charError, setCharError] = useState<string | null | React.ReactNode>(null);
 
@@ -44,7 +48,9 @@ export const Editor = ({
             Link,
             TextAlign.configure({types: ['heading', 'paragraph']}),
             Image,
-            ImageResize
+            ImageResize,
+            TextStyle,
+            Color
         ],
         onUpdate: ({editor}) => {
             const html = editor.getHTML();
@@ -77,14 +83,15 @@ export const Editor = ({
 
     return (
         <div className={classNames([classes.inputWrapper, className])}>
-            {label && <InputLabel required={required} onClick={() => editor?.commands.focus()}>{label}</InputLabel>}
+            {label && <InputLabel size={size} required={required}
+                                  onClick={() => editor?.commands.focus()}>{label}</InputLabel>}
             {description && (
                 <div style={{marginBottom: 5}}>
-                    <InputDescription>{description}</InputDescription>
+                    <InputDescription size={size}>{description}</InputDescription>
                 </div>
             )}
-            <RichTextEditor editor={editor}>
-                <RichTextEditor.Toolbar>
+            <RichTextEditor variant={'subtle'} editor={editor}>
+                <RichTextEditor.Toolbar sticky className={classes.toolbar}>
                     {editorType === 'full' && (
                         <>
                             <RichTextEditor.ControlsGroup>
@@ -92,6 +99,24 @@ export const Editor = ({
                                 <RichTextEditor.Italic/>
                                 <RichTextEditor.Underline/>
                                 <RichTextEditor.ClearFormatting/>
+                                <RichTextEditor.ColorPicker
+                                    colors={[
+                                        '#25262b',
+                                        '#868e96',
+                                        '#fa5252',
+                                        '#e64980',
+                                        '#be4bdb',
+                                        '#7950f2',
+                                        '#4c6ef5',
+                                        '#228be6',
+                                        '#15aabf',
+                                        '#12b886',
+                                        '#40c057',
+                                        '#82c91e',
+                                        '#fab005',
+                                        '#fd7e14',
+                                    ]}
+                                />
                             </RichTextEditor.ControlsGroup>
 
                             <RichTextEditor.ControlsGroup>
@@ -130,6 +155,24 @@ export const Editor = ({
                                 <RichTextEditor.Italic/>
                                 <RichTextEditor.Underline/>
                                 <RichTextEditor.ClearFormatting/>
+                                <RichTextEditor.ColorPicker
+                                    colors={[
+                                        '#25262b',
+                                        '#868e96',
+                                        '#fa5252',
+                                        '#e64980',
+                                        '#be4bdb',
+                                        '#7950f2',
+                                        '#4c6ef5',
+                                        '#228be6',
+                                        '#15aabf',
+                                        '#12b886',
+                                        '#40c057',
+                                        '#82c91e',
+                                        '#fab005',
+                                        '#fd7e14',
+                                    ]}
+                                />
                             </RichTextEditor.ControlsGroup>
 
                             <RichTextEditor.ControlsGroup>
@@ -146,6 +189,9 @@ export const Editor = ({
                             <RichTextEditor.ControlsGroup>
                                 <RichTextEditor.BulletList/>
                                 <RichTextEditor.OrderedList/>
+                            </RichTextEditor.ControlsGroup>
+                            <RichTextEditor.ControlsGroup>
+                                <InsertImageControl/>
                             </RichTextEditor.ControlsGroup>
                         </>
                     )}

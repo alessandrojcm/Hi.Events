@@ -8,11 +8,11 @@ use HiEvents\Services\Infrastructure\Image\Exception\CouldNotUploadImageExceptio
 use HiEvents\Services\Infrastructure\Image\ImageStorageService;
 use Illuminate\Http\UploadedFile;
 
-readonly class ImageUploadService
+class ImageUploadService
 {
     public function __construct(
-        private ImageStorageService      $imageStorageService,
-        private ImageRepositoryInterface $imageRepository
+        private readonly ImageStorageService      $imageStorageService,
+        private readonly ImageRepositoryInterface $imageRepository
     )
     {
     }
@@ -24,12 +24,14 @@ readonly class ImageUploadService
         UploadedFile $image,
         int          $entityId,
         string       $entityType,
-        string       $imageType
+        string       $imageType,
+        int          $accountId,
     ): ImageDomainObject
     {
         $storedImage = $this->imageStorageService->store($image, $imageType);
 
         return $this->imageRepository->create([
+            'account_id' => $accountId,
             'entity_id' => $entityId,
             'entity_type' => $entityType,
             'type' => $imageType,

@@ -5,6 +5,7 @@ namespace HiEvents\Repository\Interfaces;
 use Exception;
 use HiEvents\DomainObjects\Interfaces\DomainObjectInterface;
 use HiEvents\Repository\Eloquent\Value\OrderAndDirection;
+use HiEvents\Repository\Eloquent\Value\Relationship;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -70,7 +71,7 @@ interface RepositoryInterface
      */
     public function simplePaginateWhere(
         array $where,
-        int   $limit = null,
+        ?int   $limit = null,
         array $columns = self::DEFAULT_COLUMNS,
     ): Paginator;
 
@@ -128,7 +129,7 @@ interface RepositoryInterface
      */
     public function findFirstByField(
         string $field,
-        string $value = null,
+        ?string $value = null,
         array  $columns = ['*']
     ): ?DomainObjectInterface;
 
@@ -198,4 +199,6 @@ interface RepositoryInterface
     public function incrementEach(array $columns, array $additionalUpdates = [], ?array $where = null);
 
     public function includeDeleted(): static;
+
+    public function loadRelation(string|Relationship $relationship): static;
 }

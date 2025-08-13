@@ -2,6 +2,7 @@
 
 namespace HiEvents\Services\Application\Handlers\EventSettings;
 
+use HiEvents\DataTransferObjects\AddressDTO;
 use HiEvents\DomainObjects\EventSettingDomainObject;
 use HiEvents\Exceptions\RefundNotPossibleException;
 use HiEvents\Repository\Interfaces\EventSettingsRepositoryInterface;
@@ -31,7 +32,7 @@ readonly class PartialUpdateEventSettingsHandler
             throw new RefundNotPossibleException('Event settings not found');
         }
 
-        $locationDetails = $eventSettingsDTO->settings['location_details'] ?? $existingSettings->getLocationDetails();
+        $locationDetails = AddressDTO::from($eventSettingsDTO->settings['location_details'] ?? $existingSettings->getLocationDetails());
         $isOnlineEvent = $eventSettingsDTO->settings['is_online_event'] ?? $existingSettings->getIsOnlineEvent();
 
         if ($isOnlineEvent) {
@@ -65,7 +66,9 @@ readonly class PartialUpdateEventSettingsHandler
 
                 'order_timeout_in_minutes' => $eventSettingsDTO->settings['order_timeout_in_minutes'] ?? $existingSettings->getOrderTimeoutInMinutes(),
                 'website_url' => $eventSettingsDTO->settings['website_url'] ?? $existingSettings->getWebsiteUrl(),
-                'maps_url' => $eventSettingsDTO->settings['maps_url'] ?? $existingSettings->getMapsUrl(),
+                'maps_url' => array_key_exists('maps_url', $eventSettingsDTO->settings)
+                    ? $eventSettingsDTO->settings['maps_url']
+                    : $existingSettings->getMapsUrl(),
                 'location_details' => $locationDetails,
                 'is_online_event' => $eventSettingsDTO->settings['is_online_event'] ?? $existingSettings->getIsOnlineEvent(),
                 'online_event_connection_details' => array_key_exists('online_event_connection_details', $eventSettingsDTO->settings)

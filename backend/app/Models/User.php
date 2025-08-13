@@ -10,9 +10,11 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -20,11 +22,13 @@ use RuntimeException;
 
 class User extends BaseModel implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract, JWTSubject
 {
+    use SoftDeletes;
     use Notifiable;
     use Authenticatable;
     use Authorizable;
     use CanResetPassword;
     use MustVerifyEmail;
+    use HasFactory;
 
     /** @var array */
     protected $guarded = [];
@@ -50,19 +54,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->getKey();
     }
 
-    public function getJWTCustomClaims()
-    {
-        return [
-
-        ];
-    }
-
-    protected function getCastMap(): array
-    {
-        return [];
-    }
-
-    protected function getFillableFields(): array
+    public function getJWTCustomClaims(): array
     {
         return [];
     }

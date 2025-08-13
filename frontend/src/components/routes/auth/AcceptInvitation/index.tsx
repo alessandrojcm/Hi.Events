@@ -10,6 +10,8 @@ import {useAcceptInvitation} from "../../../../mutations/useAcceptInvitation.ts"
 import {showError, showSuccess} from "../../../../utilites/notifications.tsx";
 import {AcceptInvitationRequest} from "../../../../types.ts";
 import {Card} from "../../../common/Card";
+import {InputGroup} from "../../../common/InputGroup";
+import { getConfig } from "../../../../utilites/config.ts";
 
 const AcceptInvitation = () => {
     const navigate = useNavigate();
@@ -86,33 +88,42 @@ const AcceptInvitation = () => {
             </Alert>
             <form onSubmit={form.onSubmit(handleSubmit)}>
                 <fieldset disabled={!isFetched}>
-                    <TextInput required {...form.getInputProps('first_name')}
-                               label={t`First Name`}/>
-                    <TextInput required {...form.getInputProps('last_name')}
-                               label={t`Last Name`}/>
-                    <TextInput disabled required {...form.getInputProps('email')} label={t`Email`}/>
+                    <InputGroup>
+                        <TextInput required {...form.getInputProps('first_name')}
+                                   label={t`First Name`}/>
+                        <TextInput {...form.getInputProps('last_name')}
+                                   label={t`Last Name`}/>
+                    </InputGroup>
 
-                    <Select
-                        required
-                        searchable
-                        data={timezones}
-                        {...form.getInputProps('timezone')}
-                        label={t`Timezone`}
-                        placeholder={t`UTC`}
-                    />
+                    <InputGroup>
+                        <TextInput disabled required {...form.getInputProps('email')} label={t`Email`}/>
 
-                    <PasswordInput {...form.getInputProps('password')} label={t`New Password`} required/>
-                    <PasswordInput {...form.getInputProps('password_confirmation')} label={t`Confirm Password`}
-                                   required/>
+                        <Select
+                            required
+                            searchable
+                            data={timezones}
+                            {...form.getInputProps('timezone')}
+                            label={t`Timezone`}
+                            placeholder={t`UTC`}
+                        />
+                    </InputGroup>
+
+                    <InputGroup>
+                        <PasswordInput {...form.getInputProps('password')} label={t`New Password`} required/>
+                        <PasswordInput {...form.getInputProps('password_confirmation')} label={t`Confirm Password`}
+                                       required/>
+                    </InputGroup>
 
                     <Switch {...form.getInputProps('terms', {type: 'checkbox'})}
                             label={(
                                 <Trans>
-                                    I agree to the <Anchor target={'_blank'} href={'https://hi.events/terms-of-service'}>terms and conditions</Anchor>
+                                    I agree to the <Anchor target={'_blank'}
+                                                           href={getConfig("VITE_TOS_URL",'https://hi.events/terms-of-service')}>terms and
+                                    conditions</Anchor>
                                 </Trans>
                             )}/>
 
-                    <Button color={'var(--tk-pink)'} fullWidth loading={acceptInvitationMutation.isPending}
+                    <Button color={'var(--hi-pink)'} fullWidth loading={acceptInvitationMutation.isPending}
                             type={'submit'}>{t`Accept Invitation`}</Button>
                 </fieldset>
             </form>

@@ -9,9 +9,11 @@ use HiEvents\Models\Traits\HasImages;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends BaseModel
 {
+    use SoftDeletes;
     use HasImages;
 
     public function account(): BelongsTo
@@ -74,7 +76,12 @@ class Event extends BaseModel
         return $this->hasMany(Webhook::class);
     }
 
-    public static function boot()
+    public function affiliates(): HasMany
+    {
+        return $this->hasMany(Affiliate::class);
+    }
+
+    public static function boot(): void
     {
         parent::boot();
 
@@ -94,10 +101,5 @@ class Event extends BaseModel
             EventDomainObjectAbstract::ATTRIBUTES => 'array',
             EventDomainObjectAbstract::LOCATION_DETAILS => 'array',
         ];
-    }
-
-    protected function getFillableFields(): array
-    {
-        return [];
     }
 }

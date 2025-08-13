@@ -17,6 +17,8 @@ import {
     IconWebhook
 } from '@tabler/icons-react';
 import {useMemo} from "react";
+import { getConfig } from "../../../utilites/config.ts";
+import {isHiEvents} from "../../../utilites/helpers.ts";
 
 const RegisterFeatures = () => (
     <div className={classes.featureGrid}>
@@ -50,7 +52,7 @@ const GenericFeatures = () => {
     const allFeatures = [
         {
             icon: IconChartBar,
-            title: t`Smart Dashboard`,
+            title: t`In-depth Analytics`,
             description: t`Track revenue, page views, and sales with detailed analytics and exportable reports`
         },
         {
@@ -65,7 +67,7 @@ const GenericFeatures = () => {
         },
         {
             icon: IconBuildingStore,
-            title: t`Complete Store`,
+            title: t`Sell Anything`,
             description: t`Sell merchandise alongside tickets with integrated tax and promo code support`
         },
         {
@@ -80,12 +82,12 @@ const GenericFeatures = () => {
         },
         {
             icon: IconPalette,
-            title: t`Brand Control`,
+            title: t`Match Your Brand`,
             description: t`Customize your event page and widget design to match your brand perfectly`
         },
         {
             icon: IconWebhook,
-            title: t`Auto Workflow`,
+            title: t`Fully Integrated`,
             description: t`Connect with CRM and automate tasks using webhooks and integrations`
         }
     ];
@@ -128,7 +130,7 @@ const AuthLayout = () => {
                 <div className={classes.leftPanel}>
                     <main className={classes.container}>
                         <div className={classes.logo}>
-                            <img src={'/logo-dark.svg'} alt={t`hi.events logo`}/>
+                            <img src={getConfig("VITE_APP_LOGO_DARK", "/logo-dark.svg")} alt={t`${getConfig("VITE_APP_NAME", "Hi.Events")} logo`}/>
                         </div>
                         <div className={classes.wrapper}>
                             <Outlet/>
@@ -147,7 +149,7 @@ const AuthLayout = () => {
                                 * If you wish to remove this notice, a commercial license is available at: https://hi.events/licensing
                                 */
                             }
-                            <PoweredByFooter/>
+                            {!isHiEvents() && <PoweredByFooter/>}
                             <div className={classes.languageSwitcher}>
                                 <LanguageSwitcher/>
                             </div>
